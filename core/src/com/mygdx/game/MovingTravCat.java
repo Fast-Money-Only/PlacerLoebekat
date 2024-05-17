@@ -17,7 +17,7 @@ public class MovingTravCat {
     public void update(float deltaTime) {
         if (movingRight) {
             rect.x += speed * deltaTime;
-            if (rect.x + rect.width >= 800) { // Assuming screen width is 800
+            if (rect.x + rect.width >= 800) {
                 rect.x = 800 - rect.width;
                 movingRight = false;
             }

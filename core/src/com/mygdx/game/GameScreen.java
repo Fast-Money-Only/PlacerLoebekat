@@ -39,7 +39,6 @@ public class GameScreen implements Screen {
     public GameScreen(final Drop game) {
         this.game = game;
 
-        // Load images, sounds, and music
         dropImage = new Texture(Gdx.files.internal("droplet.png"));
         bucketImage = new Texture(Gdx.files.internal("bucket.png"));
         traverseCat = new Texture(Gdx.files.internal("Løbekat.png"));
@@ -60,9 +59,9 @@ public class GameScreen implements Screen {
 
         traversingCats = new Array<Rectangle>();
 
-        // Initialize the movingTraverseCat
+
         Rectangle movingCatRect = new Rectangle(50, 540, 64, 64);
-        mtc = new MovingTravCat(movingCatRect, 150); // 200 pixels per second
+        mtc = new MovingTravCat(movingCatRect, 150);
     }
 
     public MovingTravCat createMovingRectangle(){
@@ -91,7 +90,7 @@ public class GameScreen implements Screen {
         stackedCats = new Array<Rectangle>();
 
         stackedCats.add(staticTraverseCat);
-        // Update moving cat's position
+
         mtc.update(delta);
 
         game.batch.begin();
@@ -136,8 +135,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        // start the playback of the background music
-        // when the screen is shown
+
         //rainMusic.play();
     }
 
