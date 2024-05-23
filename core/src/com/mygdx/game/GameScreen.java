@@ -38,7 +38,7 @@ public class GameScreen implements Screen {
     boolean gameOver;
 
     long lastSpacePressTime;
-    final long SPACE_COOLDOWN = 1000000000; // 1 second in nanoseconds
+    final long SPACE_COOLDOWN = 1000000000;
 
     public GameScreen(final Drop game) {
         this.game = game;
@@ -73,7 +73,7 @@ public class GameScreen implements Screen {
         gameWon = false;
         gameOver = false;
 
-        lastSpacePressTime = TimeUtils.nanoTime() - SPACE_COOLDOWN; // Allow immediate first press
+        lastSpacePressTime = TimeUtils.nanoTime() - SPACE_COOLDOWN;
     }
 
     public MovingTravCat createMovingRectangle() {
@@ -101,6 +101,7 @@ public class GameScreen implements Screen {
         game.batch.begin();
         game.batch.draw(background, 0, 0, camera.viewportWidth, camera.viewportHeight);
         game.font.draw(game.batch, "Tryk på mellemrumstasten for at placere en løbekat", 0, 480);
+        game.font.draw(game.batch, "Fejlede placeringer: " + failedAttempts,0, 420);
         game.batch.draw(traverseCat, staticTraverseCat.x, staticTraverseCat.y, staticTraverseCat.width, staticTraverseCat.height);
         game.batch.draw(traverseCat, mtc.getRect().x, mtc.getRect().y, mtc.getRect().width, mtc.getRect().height);
 
