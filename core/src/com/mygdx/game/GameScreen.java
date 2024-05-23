@@ -9,10 +9,7 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -31,10 +28,17 @@ public class GameScreen implements Screen {
 
     MovingTravCat mtc;
     Array<Rectangle> traversingCats;
-
     Array<Rectangle> stackedCats;
     long lastDropTime;
     int gameState;
+
+    int successfulStacks;
+    int failedAttempts;
+    boolean gameWon;
+    boolean gameOver;
+
+    long lastSpacePressTime;
+    final long SPACE_COOLDOWN = 1000000000; // 1 second in nanoseconds
 
     public GameScreen(final Drop game) {
         this.game = game;
@@ -58,27 +62,32 @@ public class GameScreen implements Screen {
         staticTraverseCat.height = 64;
 
         traversingCats = new Array<Rectangle>();
-
+        stackedCats = new Array<Rectangle>();
+        stackedCats.add(staticTraverseCat);
 
         Rectangle movingCatRect = new Rectangle(50, 540, 64, 64);
         mtc = new MovingTravCat(movingCatRect, 150);
+
+        successfulStacks = 0;
+        failedAttempts = 0;
+        gameWon = false;
+        gameOver = false;
+
+        lastSpacePressTime = TimeUtils.nanoTime() - SPACE_COOLDOWN; // Allow immediate first press
     }
 
-    public MovingTravCat createMovingRectangle(){
-
+    public MovingTravCat createMovingRectangle() {
         return mtc;
     }
 
     private void spawnTraverseCats() {
         Rectangle traverseCat = new Rectangle();
-
         traverseCat.x = mtc.getRect().x;
         traverseCat.y = 600;
         traverseCat.width = 64;
         traverseCat.height = 64;
         traversingCats.add(traverseCat);
         lastDropTime = TimeUtils.nanoTime();
-
     }
 
     @Override
@@ -87,14 +96,10 @@ public class GameScreen implements Screen {
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
 
-        stackedCats = new Array<Rectangle>();
-
-        stackedCats.add(staticTraverseCat);
-
         mtc.update(delta);
 
         game.batch.begin();
-        game.batch.draw(background,0,0, camera.viewportWidth, camera.viewportHeight);
+        game.batch.draw(background, 0, 0, camera.viewportWidth, camera.viewportHeight);
         game.font.draw(game.batch, "Tryk på mellemrumstasten for at placere en løbekat", 0, 480);
         game.batch.draw(traverseCat, staticTraverseCat.x, staticTraverseCat.y, staticTraverseCat.width, staticTraverseCat.height);
         game.batch.draw(traverseCat, mtc.getRect().x, mtc.getRect().y, mtc.getRect().width, mtc.getRect().height);
@@ -103,28 +108,54 @@ public class GameScreen implements Screen {
             game.batch.draw(traverseCat, raindrop.x, raindrop.y, staticTraverseCat.width, staticTraverseCat.height);
         }
 
-        game.batch.end();
-
-        if (Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-            spawnTraverseCats();
+        for (Rectangle stackedCat : stackedCats) {
+            game.batch.draw(traverseCat, stackedCat.x, stackedCat.y, stackedCat.width, stackedCat.height);
         }
 
-        Iterator<Rectangle> iter = traversingCats.iterator();
-        while (iter.hasNext()) {
-            Rectangle droppingTraverse = iter.next();
-            droppingTraverse.y -= 150 * Gdx.graphics.getDeltaTime();
+        if (gameWon) {
+            game.font.getData().setScale(2);
+            game.font.draw(game.batch, "You Win!", 350, 300);
+            game.font.getData().setScale(1);
+        } else if (gameOver) {
+            game.font.getData().setScale(2);
+            game.font.draw(game.batch, "Game Over!", 350, 300);
+            game.font.getData().setScale(1);
+        }
 
-            int arraySize = stackedCats.size;
+        game.batch.end();
 
-            if (droppingTraverse.y + 64 < 0)
-                iter.remove();
+        if (!gameWon && !gameOver) {
+            if (Gdx.input.isKeyJustPressed(Keys.SPACE) && TimeUtils.nanoTime() - lastSpacePressTime >= SPACE_COOLDOWN) {
+                spawnTraverseCats();
+                lastSpacePressTime = TimeUtils.nanoTime();
+            }
 
+            Iterator<Rectangle> iter = traversingCats.iterator();
+            while (iter.hasNext()) {
+                Rectangle droppingTraverse = iter.next();
+                droppingTraverse.y -= 150 * Gdx.graphics.getDeltaTime();
 
-            if (droppingTraverse.overlaps(stackedCats.get(arraySize - 1))) {
-                ironSound.play();
-                stackedCats.add(droppingTraverse);
-                droppingTraverse.y = 64 * arraySize;
-                gameState++;
+                if (droppingTraverse.y + 64 < 0) {
+                    iter.remove();
+                    failedAttempts++;
+                    if (failedAttempts >= 3) {
+                        gameOver = true;
+                    }
+                }
+
+                for (Rectangle stackedCat : stackedCats) {
+                    if (droppingTraverse.overlaps(stackedCat)) {
+                        ironSound.play();
+                        droppingTraverse.y = stackedCat.y + 64;
+                        stackedCats.add(droppingTraverse);
+                        iter.remove();
+                        successfulStacks++;
+                        if (successfulStacks >= 7) {
+                            gameWon = true;
+                        }
+                        break;
+                    }
+                }
             }
         }
     }
@@ -135,8 +166,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-
-        //rainMusic.play();
+        rainMusic.play();
     }
 
     @Override
@@ -160,6 +190,4 @@ public class GameScreen implements Screen {
         traverseCat.dispose();
         background.dispose();
     }
-
 }
-

@@ -14,6 +14,7 @@ public class MovingTravCat {
         this.movingRight = true;
     }
 
+
     public void update(float deltaTime) {
         if (movingRight) {
             rect.x += speed * deltaTime;
